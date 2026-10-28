@@ -1,10 +1,11 @@
 const constants = require("../config/constants");
-const { requestApi } = require("../utils/request");
+const { requestApi, pollTaskResult } = require("../utils/request");
+const { SkillError } = require("../utils/errors");
 
 /**
  * 获取文件上传的预签名URL和授权Headers
  * @param {string} token API令牌
- * @param {string} filename 文件完整路径
+ * @param {string} filename 文件名（不含本地目录）
  * @returns {Promise<{url: string, headers: object} | null>} 预签名上传信息，包含url和headers；失败返回null
  * @throws {Error} 网络错误或认证失败时抛出
  */
@@ -81,18 +82,20 @@ async function getVideoText(token, id, prompt = "") {
 
   const data = { id, prompt };
 
-  const response = await requestApi(
+  const response = await pollTaskResult(
     "/api/video/text",
     token,
     data,
-    constants.QUERY_MAX_ATTEMPTS,
     "视频文案",
   );
-  if (response.data) {
-    return response.data;
-  } else {
-    throw new Error("获取视频文案失败");
+  const text = response && response.data && response.data.text;
+  if (!text) {
+    throw new SkillError("EMPTY_TEXT", "获取视频文案失败，请反馈给开发者", true);
   }
+  if (text.includes("包月类TOKEN") || text.includes("TOKEN余额可能不足")) {
+    throw new SkillError("VIDEO_REJECTED", text, true);
+  }
+  return response.data;
 }
 
 module.exports = {

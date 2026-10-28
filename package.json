@@ -1,7 +1,7 @@
 {
   "name": "video-ai-analyzer",
-  "version": "1.0.0",
-  "description": "调用通义千问大模型，将本地视频文件或抖音/小红书等平台视频链接转写为干净文案，并按自定义 Prompt 生成总结、改写、金句、分镜头、中英翻译等风格化内容。支持视频转文字、字幕提取、会议纪要、课程拆解、直播复盘、短视频二创等场景。",
+  "version": "1.1.0",
+  "description": "视频文案智能提取：视频转文字、视频文案提取。把本地 mp4 或 mp4 直链转成干净文案，并按 Prompt 生成总结、改写、金句、分镜头和翻译。Video to text transcription and rewriting powered by Qwen.",
   "main": "scripts/video2text/index.js",
   "type": "commonjs",
   "keywords": [
@@ -25,6 +25,11 @@
     "视频字幕",
     "视频摘要",
     "视频文案提取",
+    "视频提取文案",
+    "怎么把视频转成文字",
+    "分镜头脚本",
+    "qwen",
+    "meeting-notes",
     "内容创作",
     "短视频运营",
     "素材处理",

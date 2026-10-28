@@ -12,14 +12,17 @@ function printBanner() {
 
 function printLog(level, message) {
   message = String(message ?? "");
+  const useColor = Boolean(process.stderr.isTTY) && !process.env.NO_COLOR;
   const colorMap = {
     INFO: "\x1b[34m",
     SUCCESS: "\x1b[32m",
     WARN: "\x1b[33m",
     ERROR: "\x1b[31m",
   };
+  const color = useColor ? colorMap[level] || "" : "";
+  const reset = useColor ? "\x1b[0m" : "";
   console.error(
-    `${colorMap[level] || ""}[${new Date().toLocaleString()}] [${level}] ${message}\x1b[0m`,
+    `${color}[${new Date().toLocaleString()}] [${level}] ${message}${reset}`,
   );
 }
 
@@ -57,6 +60,43 @@ function loadLastTask() {
   return "";
 }
 
+/**
+ * 上传已成功、任务 ID 尚未拿到时的续传记录。
+ */
+function pendingUploadPath() {
+  return path.join(downloadPath(), ".pending_upload.json");
+}
+
+function savePendingUpload(record) {
+  try {
+    fs.mkdirSync(downloadPath(), { recursive: true });
+    fs.writeFileSync(pendingUploadPath(), JSON.stringify(record), "utf-8");
+  } catch (_) {
+    /* 续传记录失败时下次重新上传 */
+  }
+}
+
+function loadPendingUpload() {
+  try {
+    if (!fs.existsSync(pendingUploadPath())) return null;
+    const record = JSON.parse(fs.readFileSync(pendingUploadPath(), "utf-8"));
+    if (!record || typeof record.ossUrl !== "string" || !record.ossUrl) {
+      return null;
+    }
+    return record;
+  } catch (_) {
+    return null;
+  }
+}
+
+function clearPendingUpload() {
+  try {
+    if (fs.existsSync(pendingUploadPath())) fs.unlinkSync(pendingUploadPath());
+  } catch (_) {
+    /* 忽略删除失败 */
+  }
+}
+
 module.exports = {
   printBanner,
   printInfo: (msg) => printLog("INFO", msg),
@@ -66,4 +106,7 @@ module.exports = {
   downloadPath,
   saveLastTask,
   loadLastTask,
+  savePendingUpload,
+  loadPendingUpload,
+  clearPendingUpload,
 };

@@ -1,11 +1,11 @@
 ---
 name: video-ai-analyzer
 description: 分析视频内容，支持今日头条、抖音、B站、西瓜视频、小红书、快手等平台。自动下载视频、语音转文字、繁简转换、支持普通话、粤语等方言及外语、支持提取音频文案、提取口播文案、理解场景描述文案。当用户提供视频链接并要求分析视频内容、总结视频、看看视频讲什么时使用此技能。调用大模型自动转写并剔除语气词、口误与重复内容，并可通过自定义 Prompt 生成总结、改写、金句提取、分镜头、中英翻译等风格化文案。
-version: 1.0.0
+version: 1.1.0
 display_name: 视频分析处理
 display_name_en: Video AI Analyzer
 description_zh: 分析视频内容，支持今日头条、抖音、B站、西瓜视频、小红书、快手等平台。自动下载视频、语音转文字、繁简转换、支持普通话、粤语等方言及外语、支持提取音频文案、提取口播文案、理解场景描述文案。当用户提供视频链接并要求分析视频内容、总结视频、看看视频讲什么时使用此技能。调用大模型自动转写并剔除语气词、口误与重复内容，并可通过自定义 Prompt 生成总结、改写、金句提取、分镜头、中英翻译等风格化文案。
-description_en: Analyze video content, supporting platforms including Toutiao, Douyin, Bilibili, Xigua Video, Xiaohongshu and Kuaishou. It automatically downloads videos, performs speech-to-text transcription, and converts between Traditional and Simplified Chinese. It supports Mandarin, Cantonese and other dialects as well as foreign languages, and can extract audio transcripts and voiceover copy, and interpret scene description texts. This skill is invoked when users provide video links and request video content analysis, video summarization, or to find out what the video is about. It calls the large model for automatic transcription to remove filler words, verbal slips and repetitive content. Custom Prompts can be used to generate stylized copy such as summaries, rewrites, golden quote extraction, storyboards, Chinese-English translation and more.
+description_en: Analyze video content, supporting platforms including Toutiao, Douyin, Bilibili, Xigua Video, Xiaohongshu and Kuaishou. It automatically downloads videos, performs speech-to-text transcription, and converts between Traditional and Simplified Chinese. It supports Mandarin, Cantonese and other dialects as well as foreign languages, and can extract audio transcripts and voiceover copy, and interpret scene description texts. This skill is invoked when users provide video links and request video content analysis, video summarization, or to find out what the video is about. It calls the large model for automatic transcription to remove filler words, verbal slips and repetitive content. Custom Prompts can be used to generate stylized copy such as summaries, rewrites, golden 
 license: MIT
 metadata:
   enabled: true
@@ -15,11 +15,14 @@ metadata:
     bins:
       - "node"
     env:
-      - "GUAIKEI_API_TOKEN" # 鉴权密钥，使用前必须配置（官网 https://www.guaikei.com 或微信 13395823479 开通）
+      - "GUAIKEI_API_TOKEN" # 鉴权密钥，官网 https://www.guaikei.com 或微信 13395823479 开通
   tags:
     - "视频转文字"
-    - "视频转稿"
+    - "视频提取文案"
+    - "视频文案提取"
+    - "怎么把视频转成文字"
     - "字幕提取"
+    - "视频转稿"
     - "视频总结"
     - "视频内容分析"
     - "会议纪要"
@@ -37,10 +40,11 @@ metadata:
     - "语音转写"
     - "视频字幕"
     - "视频摘要"
-    - "视频文案提取"
+    - "视频内容分析"
     - "内容创作"
     - "短视频运营"
     - "自媒体素材"
+    - "分镜头脚本"
     - "素材处理"
     - "视频理解"
     - "采访文案"
@@ -49,153 +53,177 @@ metadata:
     - "video2text"
     - "video-to-text"
     - "speech-to-text"
-    - "video-analysis"
-    - "content-workflow"
     - "transcription"
     - "subtitle-extraction"
-    - "meeting-minutes"
     - "video-summary"
     - "audio-to-text"
+    - "meeting-minutes"
+    - "meeting-notes"
+    - "qwen"
   examples:
-    - name: 把 https://example.com/video.mp4 里的文字提取出来
+    - name: 怎么把视频里的声音转成文字
       command: 'node scripts/video2text/index.js --file "https://example.com/video.mp4"'
-    - name: 总结这个视频的核心观点 https://example.com/video.mp4
+    - name: 视频文案一键提取
+      command: 'node scripts/video2text/index.js --file "/path/to/video.mp4"'
+    - name: 总结这个视频的核心观点
       command: 'node scripts/video2text/index.js --file "https://example.com/video.mp4" --prompt "总结这个视频的核心观点"'
-    - name: 把本地 /path/to/video.mp4 改成小红书风格文案
+    - name: 把视频改成小红书文案
       command: 'node scripts/video2text/index.js --file "/path/to/video.mp4" --prompt "改写成小红书风格的文案"'
-    - name: 复用刚才的任务，提取视频所有金句
+    - name: 提取视频里的金句
       command: 'node scripts/video2text/index.js --id last --prompt "提取视频中的所有金句"'
+    - name: 查看帮助
+      command: 'node scripts/video2text/index.js --help'
 ---
 
 # 🎬 视频分析处理
 
-调用千问大模型，把视频链接或本地视频文件转写为干净文案，并可按自定义 Prompt 生成总结、改写、金句、分镜头、翻译等风格化内容。区别于 Whisper / FFmpeg 等纯 ASR 工具：本技能在转写基础上做语义理解与冗余剔除，直接产出可复用文案。
+**一句话简介：丢进一个 mp4，拿回一份能直接用的文案。转写、总结、改写、金句、翻译，一条命令完成。**
 
-## 1. ✅ 什么时候用这个技能
+调用千问大模型，把本地 mp4 或 mp4 直链转写为干净文案（自动剔除语气词、口误与重复），并可按自定义 Prompt 生成总结、小红书/抖音改写、金句提取、分镜头、中英互译。区别于 Whisper / FFmpeg 纯语音转写：本技能在转写之上做语义理解，直接产出可复用文案。当前仅支持 `.mp4`。
 
-出现以下任意意图时优先调用本技能：
+## 1. 什么时候用这个技能
 
-- 把视频 / 音频里的说话内容变成文字（视频转文字、视频转稿、字幕提取、语音转写）
-- 对视频内容做总结、提炼卖点、整理成会议纪要
-- 把视频素材改写成小红书 / 抖音 / 公众号风格文案、口播稿
+用户意图命中以下任意一类，优先调用本技能：
+
+- 把视频或音频里的说话内容变成文字：视频转文字、视频转稿、字幕提取、语音转写
+- 对视频内容做总结、提炼卖点、整理会议纪要
+- 把视频素材改写成小红书、抖音、公众号文案或口播稿
 - 提取金句、人物对话、分镜头脚本，或做中英互译
-- 课程拆解、直播复盘、采访整理、知识素材提取、探店脚本撰写
+- 课程拆解、直播复盘、采访整理、知识素材提取、探店脚本
 
-## 2. 🚧 能力边界（不适用场景）
+## 2. 什么时候不要用
 
-- **实时 / 直播流转写**：不支持，仅处理已完成的点播视频或本地文件。
-- **加密 / 会员专属 / 需登录才能播放的链接**：可能无法解析，建议先下载再用 `--file` 传本地路径。
-- **纯音乐 / 无人声视频**：无说话内容，转写价值低，建议改用音乐识别类工具。
-- **批量处理**：原生命令单次一个视频，可用 shell 循环调用（注意控制并发）。
-- **计费以服务端实际解析时长为准**，详见第11节。
+- 用户给的是抖音、小红书等平台分享页，而不是 mp4 直链：不要调用，请用户先下载成 mp4
+- 实时流或直播流：不支持，只处理已经完成的点播视频或本地文件
+- 加密、会员或需登录才能播放的链接：不支持，请用户先自行下载成 mp4
+- 非 mp4（mov、avi、mkv、m4a 等）：当前不支持，后续按案例再增加。扩展名大小写不敏感（`.MP4` 可以）
+- 纯音乐或无人声视频：转写价值低，不建议调用
+- 包月 TOKEN：单次只解析不超过 60 秒的视频。超过 60 秒不产出文案，且该次已经计入当日次数
 
-## 3. 🛠️ 使用前提
+## 3. 使用前提
 
-> **⚠️ 必须先在 [视频文案智能提取官网](https://www.guaikei.com) 开通 TOKEN，或添加微信 13395823479 获取，并配置环境变量 `GUAIKEI_API_TOKEN`，否则技能会直接退出。**
+> 必须先在 [视频分析处理SKILL官网](https://www.guaikei.com) 或微信 13395823479 开通 TOKEN，并配置环境变量 `GUAIKEI_API_TOKEN`。未配置或格式不对时，技能以退出码 3 退出。
 
-## 4. 🧭 网络与数据范围
+所有命令必须在技能安装目录（含 `scripts/` 的目录）下执行。不读取 `HTTP_PROXY` / `HTTPS_PROXY`，需要代理的环境目前无法直接使用。
 
-- 本技能**仅向 `https://www.guaikei.com` 发起 HTTPS 请求**，不上传任何与任务无关的数据。
-- 仅需环境变量 `GUAIKEI_API_TOKEN`，除用户指定的视频文件本身外不读取本地其他文件（最小权限）。
-- 视频源文件单次解析后由服务端自动销毁，不上报、不训练、不外发，商用 MCN / 企业内容部门可放心使用。
+## 4. 执行步骤
 
-## 5. 🧺 命令参数速查
+按这个顺序执行，不要跳步：
 
-| 参数                 | 别名 | 说明                                                | 是否必填           |
-| -------------------- | ---- | --------------------------------------------------- | ------------------ |
-| `--file <URL或路径>` | `-F` | 视频链接（抖音/小红书等公网 URL）或本地视频文件路径 | 与 `--id` 二选一   |
-| `--id <任务ID>`      | `-I` | 历史视频分析任务ID；传 `last` 自动复用上一次任务    | 与 `--file` 二选一 |
-| `--prompt <提示词>`  | `-P` | 自定义生成指令；省略则输出完整转写文案              | 可选               |
-| `--help`             | `-h` | 查看帮助                                            | 可选               |
+1. **判定来源**。输入是 http(s) 且指向 mp4，使用 `--file "<URL>"`。输入是本地 mp4 路径，使用 `--file "<路径>"`。用户说「刚才那个视频」或「继续」且没有新文件，使用 `--id last`。用户给出任务 ID，使用 `--id "<任务ID>"`。分享页不要传入。
+2. **判定 Prompt**。用户要总结、改写、提取、分析或翻译时，把需求原样写入 `--prompt`。没有加工需求时省略 `--prompt`，默认完整转写。提示词不超过 1000 字。
+3. **冲突规则**。`--file` 与 `--id` 同时出现时只用 `--id`。两者都没有时不要执行，向用户索要视频来源。
+4. **执行**。在技能安装目录运行命令，等待结束。
+5. **读结果**。stdout 是最终文案，原样交给用户。stderr 是日志，不要当成文案。
+6. **按退出码收尾**。见第 7 节。退出码 2 时，用相同的 `--prompt` 加上 `--id last` 再跑一次。更换提示词会重新解析：按量 TOKEN 按视频时长再计费，包月 TOKEN 再计一次当日次数。必须告诉用户。
 
-> 规则：同时传入 `--file` 与 `--id` 时，以 `--id` 为准（跳过上传，直接基于历史任务取文案）。`--file` 与 `--id` 都不传则报错退出。
+## 5. 命令参数
 
-## 6. 🛡️ 异常与边界处理
+| 参数 | 别名 | 说明 | 是否必填 |
+| ---- | ---- | ---- | -------- |
+| `--file <URL或路径>` | `-F` | 本地 mp4，或可直接下载的 mp4 直链；也可写成位置参数 | 与 `--id` 二选一 |
+| `--id <任务ID>` | `-I` | 历史任务 ID；传 `last` 复用上一次任务 | 与 `--file` 二选一 |
+| `--prompt <提示词>` | `-P` | 自定义生成指令，不超过 1000 字；省略则输出完整转写 | 可选 |
+| `--help` | `-h` | 查看帮助 | 可选 |
 
-- **TOKEN 未配置**：立即退出并提示配置方式，**不产生费用**。
-- **链接失效 / 文件损坏 / 解析超时**：任务失败不计费，并返回明确错误。
-- **`--id` 任务不存在**：返回明确业务错误（如「任务ID不存在」），**不无限重试**，立即失败。
-- **长视频**：进入轮询等待，进度输出到 stderr；请耐心等待，或之后用 `--id last` 取结果。
-- **参数缺失**：`--file` 与 `--id` 均未提供时，打印用法并退出码非 0。
+同一任务 ID 用相同提示词再次查询，直接返回已有结果，不重复计费。按量 TOKEN 更换提示词会重新解析，并按视频时长再计一次。包月 TOKEN 更换提示词会重新解析，并再计一次当日次数。
 
-## 7. 🧠 自然语言 → 命令 映射（AI 执行参考）
+## 6. 自然语言 → 命令
 
-当用户用自然语言下达指令时，按以下映射生成命令，保证识别与执行一致：
-
-| 用户自然语言指令                                     | 生成的命令                                                                                                  |
-| ---------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| 提取 https://example.com/video.mp4 里的文字          | `node scripts/video2text/index.js --file "https://example.com/video.mp4"`                                   |
+| 用户怎么说 | 生成的命令 |
+| ---------- | ---------- |
+| 怎么把 https://example.com/video.mp4 里的声音转成文字 | `node scripts/video2text/index.js --file "https://example.com/video.mp4"` |
 | 总结这个视频的核心观点 https://example.com/video.mp4 | `node scripts/video2text/index.js --file "https://example.com/video.mp4" --prompt "总结这个视频的核心观点"` |
-| 把本地 /path/to/video.mp4 改成小红书风格文案         | `node scripts/video2text/index.js --file "/path/to/video.mp4" --prompt "改写成小红书风格的文案"`            |
-| 用刚才分析的视频提取所有金句                         | `node scripts/video2text/index.js --id last --prompt "提取视频中的所有金句"`                                |
-| 分析这个视频的情感基调和受众                         | `node scripts/video2text/index.js --file "<URL或路径>" --prompt "分析视频的情感基调和目标受众"`             |
+| 把本地 /path/to/video.mp4 改成小红书文案 | `node scripts/video2text/index.js --file "/path/to/video.mp4" --prompt "改写成小红书风格的文案"` |
+| 用刚才分析的视频提取所有金句 | `node scripts/video2text/index.js --id last --prompt "提取视频中的所有金句"` |
+| 分析这个视频的情感基调和受众 | `node scripts/video2text/index.js --file "<URL或路径>" --prompt "分析视频的情感基调和目标受众"` |
 
-**判定规则（AI 自动转命令）**：① 有视频链接 / 本地路径 → 用 `--file`；② 无新视频、仅复用上次内容 → 用 `--id last`；③ 有总结 / 改写 / 提取 / 分析需求 → 写入 `--prompt`；④ 同时传路径与任务ID → 以 `--id` 为准；⑤ 无 `--prompt` → 默认完整转写。
+## 7. 输出契约与错误处理
 
-## 8. 💡 使用教程
+- **stdout**：只写最终文案，可直接 `> result.txt` 或交给下游。没有 `--prompt` 时是完整转写；有 `--prompt` 时是按提示词生成的内容。
+- **stderr**：进度、轮询和错误。终端里带颜色；管道或文件重定向时不带颜色。
+- **退出码**：
 
-### 1. 基础用法：完整转写视频原文
+| 退出码 | 含义 | 接下来怎么做 |
+| ------ | ---- | ------------ |
+| 0 | 成功，或用户查看了帮助 | 把 stdout 交给用户 |
+| 1 | 参数错误、文件或下载失败、业务错误；网络超时或 HTTP 5xx 把本轮查询次数用完 | 读 stderr 最后一条错误，向用户说明原因 |
+| 2 | 本轮查询结束，视频仍在服务端处理 | 用相同 `--prompt` 加 `--id last` 再跑一次，并说明换提示词会重新计费 |
+| 3 | `GUAIKEI_API_TOKEN` 未配置或格式不对 | 引导用户到官网或微信 13395823479 开通并配置环境变量 |
+
+处理中最多查询 30 次。间隔从 2 秒按 2、4、8 秒翻倍，单次最长 30 秒。只有 errcode 1（处理中）才继续等。TOKEN 无效、过期、余额不足、任务不存在（13）、提示词过长（14）、格式不符会立即失败。
+
+上传遇到网络错误最多重试 3 次。上传已经成功但还没拿到任务 ID 时，同一文件再次执行会接着获取任务 ID，不会重新上传。
+
+## 8. 使用教程
+
+### 基础用法：完整转写
 
 ```bash
-# 处理本地视频文件
 node scripts/video2text/index.js --file "/path/to/your/video.mp4"
-
-# 处理在线公网视频链接
 node scripts/video2text/index.js --file "https://example.com/video.mp4"
 ```
 
-### 2. 高级用法：自定义 Prompt 生成定制内容
+### 自定义 Prompt
 
 ```bash
-# 输出 3 点视频核心总结
 node scripts/video2text/index.js --file "/path/to/your/video.mp4" --prompt "请用三个要点总结这个视频的核心内容"
 
-# 改写为小红书爆款文案
 node scripts/video2text/index.js --file "/path/to/your/video.mp4" --prompt "将这段内容改写成一篇风趣幽默的小红书文案"
 
-# 复用上一次任务ID，提取全部金句（无需重新上传视频）
 node scripts/video2text/index.js --id last --prompt "提取视频中的所有金句"
-
-# 分析视频整体情感基调
-node scripts/video2text/index.js --file "/path/to/your/video.mp4" --prompt "分析视频的情感基调"
 ```
 
-Prompt 可填任意指令，例如：提取全部人物对话、全文翻译成英文、拆解分镜头脚本、提炼抖音短标题、整理成结构化会议纪要。
+Prompt 没有格式限制。也可以要求提取人物对话、全文翻译成英文、拆解分镜头、提炼抖音短标题，或整理成会议纪要。
 
-## 9. 📜 输出说明
+## 9. 网络与数据
 
-- 最终文案输出到**标准输出 stdout**，可直接 `> result.txt` 保存或管道给下游处理。
-- 无 `--prompt`：输出完整转写文案（已剔除语气词 / 口误 / 重复）。
-- 有 `--prompt`：输出按 Prompt 生成的定制内容。
-- 进度 / 日志输出到 **stderr**，不污染 stdout，便于程序化消费。
+- 任务接口只向 `https://www.guaikei.com` 发起 HTTPS 请求。直链先下载到本地临时目录，再经预签名地址上传。
+- 预签名只提交文件名，不提交本地完整路径。
+- 只读取环境变量 `GUAIKEI_API_TOKEN`。除用户指定的视频、下载临时文件和上次任务 ID 外，不读取其它本地文件。
+- 视频只用于本次文案解析。处理完毕 24 小时后从服务器销毁，不存储、不对外泄露、不用于模型训练。
 
-## 10. 💎 核心亮点（为什么选它）
+## 10. 计费规则
 
-1. **千问大模型语义理解，而非纯转写**：自动识别语境、过滤口误/重复/语气词，输出逻辑通顺的结构化文案，省去 30%+ 人工校对工时。
-2. **自定义 Prompt 自由定制**：总结、二创改写、素材提取、深度分析、中英互译全覆盖。
-3. **云端算力，长短视频通吃**：不受本地 CPU/GPU 限制，短视频到数十小时长视频均可解析。
-4. **多源支持**：抖音 / 小红书等平台链接直连，也支持本地文件上传。
-5. **企业级隐私保障**：传输加密、单次使用后自动销毁视频源文件、不用于模型训练与对外分发，商用 MCN / 企业内容部门可放心使用。
+TOKEN 分按量和包月两类，以开通时的类型为准。
 
-## 11. 💰 计费规则（按量付费，无最低消费）
+### 按量 TOKEN
 
-| 计费档位           | 单价         | 最小结算粒度    | 适用场景           |
-| ------------------ | ------------ | --------------- | ------------------ |
-| 视频时长 ≥ 1 分钟  | 0.6 元/分钟  | 10 秒为最小单位 | 课程、会议、长访谈 |
-| 视频时长 ＜ 1 分钟 | 0.1 元/10 秒 | 10 秒为最小单位 | 短视频、片段素材   |
+没有最低消费。
 
-- 示例：86 秒视频 = 0.6 + 0.1×3 = 0.9 元；10 分钟视频 = 10×0.6 = 6 元。
-- 月均用量高可联系微信申请阶梯低价；链接失效 / 文件损坏 / 解析超时失败不计费。
+| 计费档位 | 单价 | 结算方式 |
+| -------- | ---- | -------- |
+| 按视频时长 | 0.096 元 / 10 秒 | 时长按秒向上取整，再按 10 秒进一 |
 
-## 12. 🤔 常见问题
+- 86 秒 = 9 × 0.096 = 0.864 元。10 分钟 = 60 × 0.096 = 5.76 元。
+- 账号若配置了 `video/text` 阶梯单价，以服务端该 TOKEN 的单价为准。
+- 同一任务、相同提示词且已经生成过结果时，再次查询直接返回，不重复计费。更换提示词按整段时长再计一次。
+- 费用在文案解析完成时结算。轮询「处理中」不会因为继续查询而重复扣费。
 
-1. **和 Whisper / FFmpeg 比？** 本地方案仅输出含杂音、口误的原始流水稿且无法定制；本技能输出精炼文案并支持任意 Prompt，且云端算力不占本地资源、用完自动删源文件。
-2. **Prompt 能填什么？** 无限制，所有对视频内容的处理需求均可，举例见上文。
-3. **视频安全吗？** 安全，单次解析、用完即焚、不存储不外泄不训练。
-4. **支持批量吗？** 原生命令单次一个视频；可用 shell 循环调用实现批量（建议控制并发）。
+### 包月 TOKEN
 
-## 13. 🤝 联系与商务
+不按视频时长扣余额，按套餐的每日次数计次。
 
-- TOKEN 申请 / 技术咨询 / 错误反馈：微信 13395823479
-- 官网：https://www.guaikei.com
-- 大客户阶梯优惠、企业定制对接：联系上述微信洽谈
+| 套餐 | 价格 | 每日次数 |
+| ---- | ---- | -------- |
+| 入门版 | 30 元 / 月 | 20 次 |
+| 专业版 | 220 元 / 月 | 90 次 |
+
+- 单次只解析不超过 60 秒的视频。超过 60 秒不产出文案，这一次已经计入当日次数，不会退回。
+- 同一任务、相同提示词且已经生成过结果时，再次查询直接返回，不重复计次。更换提示词会重新解析，并再计一次当日次数。
+- 当日次数用完后，次日恢复。套餐到期后需续期才能继续解析。
+- 定制额度以开通时写入的每日次数为准。
+
+## 11. 常见问题
+
+1. **和 Whisper / FFmpeg 比？** 本地方案只出含口误的原始流水稿，而且不能按题目改写。本技能输出精炼文案，并支持任意 Prompt，解析在云端进行。
+2. **Prompt 能填什么？** 没有格式限制。提取人物对话、全文翻译、分镜头拆解、抖音标题、会议纪要都可以。
+3. **视频安全吗？** 任务请求和上传走 HTTPS。处理完毕 24 小时后从服务器销毁，不存储、不对外泄露、不用于模型训练。
+4. **支持批量吗？** 一次处理一个视频。可以用 shell 循环调用，并控制并发。
+5. **报错找谁？** 微信 13395823479。请带上完整命令（隐去 TOKEN）、stderr 最后 10 行，以及任务 ID（如果有）。
+
+## 12. 联系与商务
+
+- TOKEN 申请、技术咨询、错误反馈：微信 13395823479
+- 官网：[视频分析处理技能官网](https://www.guaikei.com)
+- 大客户阶梯优惠、企业定制：联系上述微信

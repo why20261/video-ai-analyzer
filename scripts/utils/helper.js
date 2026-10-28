@@ -1,15 +1,18 @@
 const { Downloader } = require("../utils/download.js");
-const path = require("path");
 const constants = require("../config/constants");
+const { safeDownloadName } = require("./validator");
+const fs = require("fs");
 
 function inlineLog(msg) {
   try {
-    process.stdout.clearLine();
-    process.stdout.cursorTo(0);
-    process.stdout.write(msg + "\r");
-  } catch (_) {
-    process.stderr.write(msg + "\n");
-  }
+    if (process.stderr.isTTY) {
+      process.stderr.clearLine(0);
+      process.stderr.cursorTo(0);
+      process.stderr.write(msg + "\r");
+      return;
+    }
+  } catch (_) {}
+  process.stderr.write(msg + "\n");
 }
 
 function byteHumanize(byte) {
@@ -31,19 +34,33 @@ async function download(url, path) {
         maxRetries: constants.CREATE_MAX_ATTEMPTS,
         delay: constants.RETRY_INTERVAL,
       },
-      override: { skip: true, skipSmaller: true },
+      override: false,
+      fileName: (name) => safeDownloadName(name),
     };
 
     let progressLog = "";
     const dl = new Downloader(url, path, options);
 
     dl.on("end", (info) => {
-      inlineLog(progressLog + " - 下载完成");
+      const filePath = info && info.filePath ? info.filePath : "";
+      if (info && info.incomplete) {
+        if (filePath) {
+          try {
+            fs.unlinkSync(filePath);
+          } catch (_) {}
+        }
+        reject(new Error("下载未完成，文件不完整"));
+        return;
+      }
+      if (!filePath) {
+        reject(new Error("下载失败: 未返回文件路径"));
+        return;
+      }
+      inlineLog((progressLog ? progressLog + " - " : "") + "下载完成");
       resolve(info);
     })
-      .on("skip", (skipInfo) => {
-        inlineLog(`文件${skipInfo.fileName}已存在, 跳过`);
-        resolve(skipInfo);
+      .on("skip", () => {
+        reject(new Error("目标位置已有同名文件，已取消下载，以免误用旧文件"));
       })
       .on("retry", (attempt, opts) => {
         let count = Math.floor(opts.delay / 1000);
@@ -61,7 +78,7 @@ async function download(url, path) {
           inlineLog("该链接不支持断点续传，文件将从头重新开始加载。");
         }
       })
-      .on("progress", (stats) => {
+      .on("progress.throttled", (stats) => {
         const progress = stats.progress.toFixed(1);
         const speed = byteHumanize(stats.speed);
         const downloaded = byteHumanize(stats.downloaded);
